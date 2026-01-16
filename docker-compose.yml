@@ -1,0 +1,29 @@
+# LocalStack - AWS Simulator for Local Development
+# ================================================
+# This runs a local version of AWS services for testing Terraform
+# without needing a real AWS account!
+#
+# Usage:
+#   docker-compose up -d     # Start LocalStack
+#   docker-compose down      # Stop LocalStack
+#   docker-compose logs -f   # View logs
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: terraform-localstack
+    ports:
+      - "4566:4566"           # LocalStack Gateway (all services)
+      - "4510-4559:4510-4559" # External service ports
+    environment:
+      - SERVICES=ec2,iam,s3,sts,vpc
+      - DEBUG=0
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "./localstack-data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

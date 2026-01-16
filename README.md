@@ -844,24 +844,91 @@ python run.py
 
 ### (Optional) Test with LocalStack
 
-If you want to actually run your Terraform locally without AWS:
+If you want to actually run your Terraform locally without needing a real AWS account, use **LocalStack** - a local AWS simulator!
 
+**Step 1: Start LocalStack**
 ```bash
-# Start LocalStack (AWS simulator)
+# Make sure Docker is running, then:
 docker-compose up -d
 
-# Initialize Terraform
+# Wait for it to be ready (about 30 seconds)
+docker-compose logs -f
+# Look for "Ready." message, then Ctrl+C
+```
+
+**Step 2: Enable LocalStack Provider**
+```bash
+# Copy the LocalStack override file
+cp provider_override.tf.example provider_override.tf
+```
+
+This tells Terraform to use LocalStack (localhost:4566) instead of real AWS.
+
+**Step 3: Run Terraform**
+```bash
+# Initialize (downloads providers)
 terraform init
 
-# Plan (preview)
+# Plan (preview what will be created)
 terraform plan
 
-# Apply (create resources)
+# Apply (create the resources!)
 terraform apply
-
-# Destroy (cleanup)
-terraform destroy
+# Type "yes" when prompted
 ```
+
+**Step 4: Verify Resources (Visual CLI)**
+
+See your resources in a nice table format:
+
+```bash
+# List VPCs (table format)
+aws --endpoint-url=http://localhost:4566 ec2 describe-vpcs \
+  --query "Vpcs[*].{VpcId:VpcId,CIDR:CidrBlock,Name:Tags[?Key=='Name']|[0].Value}" \
+  --output table
+
+# List Subnets
+aws --endpoint-url=http://localhost:4566 ec2 describe-subnets \
+  --query "Subnets[*].{SubnetId:SubnetId,CIDR:CidrBlock,AZ:AvailabilityZone,Name:Tags[?Key=='Name']|[0].Value}" \
+  --output table
+
+# List EC2 Instances
+aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
+  --query "Reservations[*].Instances[*].{InstanceId:InstanceId,Type:InstanceType,State:State.Name,IP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" \
+  --output table
+
+# List Security Groups
+aws --endpoint-url=http://localhost:4566 ec2 describe-security-groups \
+  --query "SecurityGroups[*].{GroupId:GroupId,Name:GroupName,Description:Description}" \
+  --output table
+```
+
+**Or use the visual dashboard:**
+```bash
+python dashboard.py
+```
+
+This opens a web page showing all your resources in a visual format!
+
+**Step 5: Cleanup**
+```bash
+# Destroy all resources
+terraform destroy
+
+# Stop LocalStack
+docker-compose down
+
+# Remove the override (so you can use real AWS later)
+rm provider_override.tf
+```
+
+**Troubleshooting LocalStack:**
+
+| Issue | Solution |
+|-------|----------|
+| "Cannot connect to Docker" | Make sure Docker Desktop is running |
+| "Provider not found" | Run `terraform init` after copying override |
+| "Error creating VPC" | Check LocalStack logs: `docker-compose logs` |
 
 ---
 

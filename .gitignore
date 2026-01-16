@@ -17,3 +17,7 @@ Thumbs.db
 
 # Test artifacts
 *_score.txt
+
+# LocalStack
+localstack-data/
+provider_override.tf

@@ -1,0 +1,34 @@
+# LocalStack Provider Override
+# ============================
+# Copy this file to provider_override.tf to test with LocalStack
+# (without needing a real AWS account!)
+#
+# Usage:
+#   1. Start LocalStack: docker-compose up -d
+#   2. Copy this file: cp provider_override.tf.example provider_override.tf
+#   3. Run terraform: terraform init && terraform apply
+#   4. When done, delete: rm provider_override.tf
+
+provider "aws" {
+  region                      = "us-east-1"
+  access_key                  = "test"
+  secret_key                  = "test"
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+
+  endpoints {
+    ec2 = "http://localhost:4566"
+    iam = "http://localhost:4566"
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+  }
+
+  default_tags {
+    tags = {
+      Project     = "terraform-challenge"
+      Environment = "localstack"
+      ManagedBy   = "terraform"
+    }
+  }
+}
