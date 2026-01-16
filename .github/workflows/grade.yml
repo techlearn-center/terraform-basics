@@ -1,0 +1,328 @@
+name: Grade Terraform Challenge
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  grade:
+    name: Grade Terraform Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+
+      - name: Grade main.tf (10 points)
+        id: main
+        run: |
+          POINTS=0
+          MAX=10
+
+          if [ -f "main.tf" ]; then
+            CONTENT=$(cat main.tf)
+
+            # Check terraform block (2 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'terraform {'; then
+              echo "✓ Terraform block"
+              POINTS=$((POINTS + 2))
+            else
+              echo "✗ Terraform block missing"
+            fi
+
+            # Check AWS provider in required_providers (3 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'required_providers' && echo "$CONTENT" | grep -q 'hashicorp/aws'; then
+              echo "✓ AWS provider defined"
+              POINTS=$((POINTS + 3))
+            else
+              echo "✗ AWS provider missing"
+            fi
+
+            # Check provider block (3 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'provider "aws"'; then
+              echo "✓ Provider configured"
+              POINTS=$((POINTS + 3))
+            else
+              echo "✗ Provider not configured"
+            fi
+
+            # Check default_tags (2 points)
+            if echo "$CONTENT" | grep -q 'default_tags'; then
+              echo "✓ Default tags"
+              POINTS=$((POINTS + 2))
+            else
+              echo "✗ Default tags missing"
+            fi
+          else
+            echo "✗ main.tf not found"
+          fi
+
+          echo "main.tf Score: $POINTS/$MAX"
+          echo $POINTS > main_score.txt
+
+      - name: Grade vpc.tf (20 points)
+        id: vpc
+        run: |
+          POINTS=0
+          MAX=20
+
+          if [ -f "vpc.tf" ]; then
+            CONTENT=$(cat vpc.tf)
+
+            # VPC (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_vpc"'; then
+              echo "✓ VPC resource"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ VPC missing"
+            fi
+
+            # Subnet (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_subnet"'; then
+              echo "✓ Subnet resource"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ Subnet missing"
+            fi
+
+            # IGW (4 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_internet_gateway"'; then
+              echo "✓ Internet gateway"
+              POINTS=$((POINTS + 4))
+            else
+              echo "✗ IGW missing"
+            fi
+
+            # Route table (3 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_route_table"'; then
+              echo "✓ Route table"
+              POINTS=$((POINTS + 3))
+            else
+              echo "✗ Route table missing"
+            fi
+
+            # Association (3 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_route_table_association"'; then
+              echo "✓ Route association"
+              POINTS=$((POINTS + 3))
+            else
+              echo "✗ Association missing"
+            fi
+          else
+            echo "✗ vpc.tf not found"
+          fi
+
+          echo "vpc.tf Score: $POINTS/$MAX"
+          echo $POINTS > vpc_score.txt
+
+      - name: Grade security.tf (20 points)
+        id: security
+        run: |
+          POINTS=0
+          MAX=20
+
+          if [ -f "security.tf" ]; then
+            CONTENT=$(cat security.tf)
+
+            # Security group (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_security_group"'; then
+              echo "✓ Security group"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ Security group missing"
+            fi
+
+            # Count ingress rules (10 points)
+            INGRESS_COUNT=$(echo "$CONTENT" | grep -v '^\s*#' | grep -c 'ingress {' || true)
+            if [ "$INGRESS_COUNT" -ge 3 ]; then
+              echo "✓ Ingress rules: $INGRESS_COUNT"
+              POINTS=$((POINTS + 10))
+            elif [ "$INGRESS_COUNT" -gt 0 ]; then
+              echo "~ Ingress rules: $INGRESS_COUNT (need 3)"
+              POINTS=$((POINTS + INGRESS_COUNT * 3))
+            else
+              echo "✗ No ingress rules"
+            fi
+
+            # Egress (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'egress {'; then
+              echo "✓ Egress rule"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ Egress missing"
+            fi
+          else
+            echo "✗ security.tf not found"
+          fi
+
+          echo "security.tf Score: $POINTS/$MAX"
+          echo $POINTS > security_score.txt
+
+      - name: Grade ec2.tf (25 points)
+        id: ec2
+        run: |
+          POINTS=0
+          MAX=25
+
+          if [ -f "ec2.tf" ]; then
+            CONTENT=$(cat ec2.tf)
+
+            # AMI data source (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'data "aws_ami"'; then
+              echo "✓ AMI data source"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ AMI data source missing"
+            fi
+
+            # EC2 instance (10 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'resource "aws_instance"'; then
+              echo "✓ EC2 instance"
+              POINTS=$((POINTS + 10))
+            else
+              echo "✗ EC2 instance missing"
+            fi
+
+            # User data (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'user_data'; then
+              echo "✓ User data"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ User data missing"
+            fi
+
+            # Security group ref (5 points)
+            if echo "$CONTENT" | grep -v '^\s*#' | grep -q 'vpc_security_group_ids'; then
+              echo "✓ Security group reference"
+              POINTS=$((POINTS + 5))
+            else
+              echo "✗ Security group ref missing"
+            fi
+          else
+            echo "✗ ec2.tf not found"
+          fi
+
+          echo "ec2.tf Score: $POINTS/$MAX"
+          echo $POINTS > ec2_score.txt
+
+      - name: Grade variables.tf (15 points)
+        id: variables
+        run: |
+          POINTS=0
+          MAX=15
+
+          if [ -f "variables.tf" ]; then
+            CONTENT=$(cat variables.tf)
+
+            for VAR in aws_region project_name vpc_cidr instance_type allowed_ssh_cidr; do
+              if echo "$CONTENT" | grep -v '^\s*#' | grep -q "variable \"$VAR\""; then
+                echo "✓ var.$VAR"
+                POINTS=$((POINTS + 3))
+              else
+                echo "✗ var.$VAR missing"
+              fi
+            done
+          else
+            echo "✗ variables.tf not found"
+          fi
+
+          echo "variables.tf Score: $POINTS/$MAX"
+          echo $POINTS > variables_score.txt
+
+      - name: Grade outputs.tf (10 points)
+        id: outputs
+        run: |
+          POINTS=0
+          MAX=10
+
+          if [ -f "outputs.tf" ]; then
+            CONTENT=$(cat outputs.tf)
+
+            for OUT in vpc_id instance_id instance_public_ip website_url; do
+              if echo "$CONTENT" | grep -v '^\s*#' | grep -q "output \"$OUT\""; then
+                echo "✓ output.$OUT"
+                POINTS=$((POINTS + 2))
+              else
+                echo "✗ output.$OUT missing"
+              fi
+            done
+
+            # Bonus for having all 4
+            if [ $POINTS -eq 8 ]; then
+              POINTS=10
+            fi
+          else
+            echo "✗ outputs.tf not found"
+          fi
+
+          echo "outputs.tf Score: $POINTS/$MAX"
+          echo $POINTS > outputs_score.txt
+
+      - name: Terraform Validate (Bonus)
+        continue-on-error: true
+        run: |
+          terraform init -backend=false
+          if terraform validate; then
+            echo "✓ Terraform configuration is valid!"
+            echo "10" > validate_score.txt
+          else
+            echo "✗ Terraform validation failed"
+            echo "0" > validate_score.txt
+          fi
+
+      - name: Calculate Total Score
+        run: |
+          MAIN=$(cat main_score.txt)
+          VPC=$(cat vpc_score.txt)
+          SECURITY=$(cat security_score.txt)
+          EC2=$(cat ec2_score.txt)
+          VARIABLES=$(cat variables_score.txt)
+          OUTPUTS=$(cat outputs_score.txt)
+          VALIDATE=$(cat validate_score.txt 2>/dev/null || echo "0")
+
+          TOTAL=$((MAIN + VPC + SECURITY + EC2 + VARIABLES + OUTPUTS))
+          MAX=100
+
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "          TERRAFORM BASICS CHALLENGE        "
+          echo "═══════════════════════════════════════════"
+          echo ""
+          echo "  ⚙️  Provider (main.tf):    $MAIN/10 points"
+          echo "  🌐 VPC (vpc.tf):          $VPC/20 points"
+          echo "  🔐 Security (security.tf): $SECURITY/20 points"
+          echo "  💻 EC2 (ec2.tf):          $EC2/25 points"
+          echo "  📝 Variables:             $VARIABLES/15 points"
+          echo "  📤 Outputs:               $OUTPUTS/10 points"
+          echo ""
+          if [ "$VALIDATE" -eq 10 ]; then
+            echo "  ✅ Terraform Validate:    PASSED (bonus!)"
+          fi
+          echo ""
+          echo "───────────────────────────────────────────"
+          echo "  📊 TOTAL SCORE: $TOTAL/$MAX points"
+          echo "───────────────────────────────────────────"
+          echo ""
+
+          if [ $TOTAL -eq $MAX ]; then
+            echo "  🎉 PERFECT SCORE! You mastered Terraform basics!"
+          elif [ $TOTAL -ge 80 ]; then
+            echo "  ✨ Great job! Your infrastructure code is solid!"
+          elif [ $TOTAL -ge 60 ]; then
+            echo "  📈 Good progress! Keep improving!"
+          else
+            echo "  💪 Keep practicing! Check the README for hints."
+          fi
+          echo ""
+
+          # Fail if not passing
+          if [ $TOTAL -lt 60 ]; then
+            exit 1
+          fi

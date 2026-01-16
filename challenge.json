@@ -1,0 +1,50 @@
+{
+  "id": "terraform-basics",
+  "title": "Terraform Basics",
+  "description": "Define cloud infrastructure as code using Terraform - provision a VPC, subnet, security group, and EC2 instance.",
+  "level": 2,
+  "track": "devops",
+  "difficulty": "intermediate",
+  "estimated_time": "3-4 hours",
+  "prerequisites": [
+    "cicd-pipeline"
+  ],
+  "skills": [
+    "terraform",
+    "infrastructure-as-code",
+    "aws-vpc",
+    "aws-ec2",
+    "security-groups",
+    "hcl"
+  ],
+  "tools_required": [
+    "terraform"
+  ],
+  "points": {
+    "main_tf": 10,
+    "vpc_tf": 20,
+    "security_tf": 20,
+    "ec2_tf": 25,
+    "variables_tf": 15,
+    "outputs_tf": 10,
+    "total": 100
+  },
+  "passing_score": 60,
+  "files_to_complete": [
+    "main.tf",
+    "vpc.tf",
+    "security.tf",
+    "ec2.tf",
+    "variables.tf",
+    "outputs.tf"
+  ],
+  "learning_outcomes": [
+    "Understand Infrastructure as Code concepts",
+    "Write Terraform HCL configuration",
+    "Configure AWS provider and resources",
+    "Create VPCs, subnets, and internet gateways",
+    "Define security groups with ingress/egress rules",
+    "Provision EC2 instances with user data",
+    "Use variables and outputs for reusability"
+  ]
+}
