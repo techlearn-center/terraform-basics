@@ -987,6 +987,124 @@ rm provider_override.tf
 
 ---
 
+## Deploying to Real AWS
+
+Once you've practiced with LocalStack, you can deploy to a real AWS account!
+
+### Prerequisites
+
+1. **Create an AWS Account** (if you don't have one):
+   - Go to https://aws.amazon.com/
+   - Click "Create an AWS Account"
+   - Free tier includes 750 hours/month of t2.micro instances
+
+2. **Create IAM User with Programmatic Access**:
+   - Go to IAM Console → Users → Add User
+   - Enable "Programmatic access"
+   - Attach policy: `AdministratorAccess` (or `AmazonEC2FullAccess` for minimal)
+   - Save the Access Key ID and Secret Access Key
+
+3. **Configure AWS CLI**:
+   ```bash
+   aws configure
+   # Enter your Access Key ID
+   # Enter your Secret Access Key
+   # Region: us-east-1 (or your preferred region)
+   # Output format: json
+   ```
+
+### Deploy Your Infrastructure
+
+```bash
+# 1. Remove LocalStack override (if you used it)
+rm -f provider_override.tf
+
+# 2. Reinitialize (switches to real AWS provider)
+terraform init
+
+# 3. Preview what will be created
+terraform plan
+
+# 4. Create the resources!
+terraform apply
+# Type "yes" to confirm
+
+# ⚠️ This creates REAL resources that may cost money!
+```
+
+### Verify Resources in Real AWS
+
+**Option 1: AWS Console**
+- Go to https://console.aws.amazon.com/
+- Navigate to EC2 → Instances to see your server
+- Navigate to VPC to see your network
+
+**Option 2: AWS CLI**
+```bash
+# List VPCs (no --endpoint-url for real AWS)
+aws ec2 describe-vpcs \
+  --query "Vpcs[*].{VpcId:VpcId,CIDR:CidrBlock,Name:Tags[?Key=='Name']|[0].Value}" \
+  --output table
+
+# List EC2 Instances
+aws ec2 describe-instances \
+  --query "Reservations[*].Instances[*].{InstanceId:InstanceId,Type:InstanceType,State:State.Name,IP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" \
+  --output table
+
+# List Security Groups
+aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=*terraform*" \
+  --query "SecurityGroups[*].{GroupId:GroupId,Name:GroupName}" \
+  --output table
+```
+
+**Option 3: Visual Dashboard**
+```bash
+# Use the dashboard with --aws flag for real AWS
+python dashboard.py --aws
+```
+
+This shows your REAL AWS resources in a visual web interface at http://localhost:8080.
+
+### Access Your Web Server
+
+Once deployed, visit your server:
+```bash
+# Get the public IP
+terraform output instance_public_ip
+
+# Visit in browser
+curl http://$(terraform output -raw instance_public_ip)
+```
+
+### ⚠️ Important: Clean Up to Avoid Charges!
+
+```bash
+# Destroy all resources when done
+terraform destroy
+# Type "yes" to confirm
+
+# Verify everything is deleted
+aws ec2 describe-instances \
+  --filters "Name=tag:Project,Values=terraform-challenge" \
+  --query "Reservations[*].Instances[*].InstanceId" \
+  --output text
+# Should return empty
+```
+
+### Cost Estimate
+
+| Resource | Free Tier | After Free Tier |
+|----------|-----------|-----------------|
+| t2.micro EC2 | 750 hrs/month free | ~$8.50/month |
+| VPC | Free | Free |
+| Elastic IP (if used) | Free while attached | $3.60/month |
+| Data transfer | 100GB/month free | $0.09/GB |
+
+**Tip:** Run `terraform destroy` immediately after testing to avoid charges!
+
+---
+
 ## Understanding Terraform (For DevOps Students)
 
 ### State Management
