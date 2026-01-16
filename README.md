@@ -877,38 +877,93 @@ terraform apply
 # Type "yes" when prompted
 ```
 
-**Step 4: Verify Resources (Visual CLI)**
+**Step 4: Verify Resources Created**
 
-See your resources in a nice table format:
+After `terraform apply` completes, you should see output like:
+```
+Apply complete! Resources: 7 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+instance_id = "i-abc123def456"
+instance_public_ip = "54.214.52.149"
+public_subnet_id = "subnet-xyz789"
+security_group_id = "sg-123abc"
+vpc_id = "vpc-456def"
+```
+
+**View resources with AWS CLI (table format):**
 
 ```bash
-# List VPCs (table format)
+# List VPCs
 aws --endpoint-url=http://localhost:4566 ec2 describe-vpcs \
   --query "Vpcs[*].{VpcId:VpcId,CIDR:CidrBlock,Name:Tags[?Key=='Name']|[0].Value}" \
   --output table
+```
 
+Expected output:
+```
+------------------------------------------------------
+|                    DescribeVpcs                    |
++---------------+---------------------------+--------+
+|     CIDR      |           Name            | VpcId  |
++---------------+---------------------------+--------+
+|  10.0.0.0/16  |  terraform-challenge-vpc  | vpc-xxx|
++---------------+---------------------------+--------+
+```
+
+```bash
 # List Subnets
 aws --endpoint-url=http://localhost:4566 ec2 describe-subnets \
   --query "Subnets[*].{SubnetId:SubnetId,CIDR:CidrBlock,AZ:AvailabilityZone,Name:Tags[?Key=='Name']|[0].Value}" \
   --output table
+```
 
+```bash
 # List EC2 Instances
 aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
   --query "Reservations[*].Instances[*].{InstanceId:InstanceId,Type:InstanceType,State:State.Name,IP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" \
   --output table
+```
 
+Expected output:
+```
+-----------------------------------------------------------------
+|                       DescribeInstances                       |
++----------------------+-----------------+----------+-----------+
+|      InstanceId      |    PublicIP     |  State   |   Type    |
++----------------------+-----------------+----------+-----------+
+|  i-abc123def456      |  54.214.52.149  |  running |  t2.micro |
++----------------------+-----------------+----------+-----------+
+```
+
+```bash
 # List Security Groups
 aws --endpoint-url=http://localhost:4566 ec2 describe-security-groups \
   --query "SecurityGroups[*].{GroupId:GroupId,Name:GroupName,Description:Description}" \
   --output table
+
+# List Internet Gateways
+aws --endpoint-url=http://localhost:4566 ec2 describe-internet-gateways \
+  --query "InternetGateways[*].{IGW:InternetGatewayId,VPC:Attachments[0].VpcId}" \
+  --output table
+
+# List Route Tables
+aws --endpoint-url=http://localhost:4566 ec2 describe-route-tables \
+  --query "RouteTables[*].{RTB:RouteTableId,VPC:VpcId}" \
+  --output table
 ```
 
-**Or use the visual dashboard:**
+**Or use the visual web dashboard:**
 ```bash
 python dashboard.py
 ```
 
-This opens a web page showing all your resources in a visual format!
+This opens a web page at http://localhost:8080 showing:
+- Stats cards with resource counts
+- ASCII architecture diagram of your infrastructure
+- Cards for each VPC, Subnet, EC2 instance, and Security Group
+- Refresh button to update the view
 
 **Step 5: Cleanup**
 ```bash
