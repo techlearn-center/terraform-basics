@@ -818,6 +818,30 @@ terraform fmt
 python run.py
 ```
 
+**Expected output when complete:**
+```
+============================================================
+  🏗️  Terraform Basics Challenge
+============================================================
+
+  ✅ Provider Config (10/10 points)
+  ✅ VPC & Networking (20/20 points)
+  ✅ Security Groups (20/20 points)
+  ✅ EC2 Instance (25/25 points)
+  ✅ Variables (15/15 points)
+  ✅ Outputs (10/10 points)
+
+============================================================
+  🎯 Total Score: 100/100
+  🎉 CHALLENGE COMPLETE!
+============================================================
+```
+
+**If you see less than 100:**
+- Read the missing items (marked with ✗)
+- Check the corresponding step in this README
+- Fix your .tf files and run again
+
 ### (Optional) Test with LocalStack
 
 If you want to actually run your Terraform locally without AWS:
