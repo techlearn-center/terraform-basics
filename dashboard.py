@@ -241,6 +241,108 @@ def generate_html():
             color: #fff;
             padding: 20px;
         }}
+
+        /* Modal Styles */
+        .modal {{
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+        }}
+        .modal.active {{ display: flex; align-items: center; justify-content: center; }}
+        .modal-content {{
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0,217,255,0.2);
+        }}
+        .modal-close {{
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s;
+        }}
+        .modal-close:hover {{ color: #fff; }}
+        .modal-title {{
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #00d9ff;
+        }}
+        .modal-section {{
+            margin-bottom: 20px;
+        }}
+        .modal-section h4 {{
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }}
+        .modal-section p {{
+            line-height: 1.6;
+            color: #ccc;
+        }}
+        .modal-section ul {{
+            margin-left: 20px;
+            line-height: 1.8;
+            color: #ccc;
+        }}
+        .modal-section code {{
+            background: rgba(0,217,255,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #00d9ff;
+        }}
+        .modal-diagram {{
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.4;
+            color: #00ff88;
+        }}
+        .modal-example {{
+            background: rgba(0,217,255,0.1);
+            border-left: 4px solid #00d9ff;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+        }}
+        .modal-example strong {{ color: #00d9ff; }}
+        .modal-terraform {{
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #feca57;
+            margin-top: 10px;
+        }}
+        .modal-terraform .comment {{ color: #888; }}
+        .modal-terraform .keyword {{ color: #ff6b6b; }}
+        .modal-terraform .string {{ color: #00ff88; }}
+
+        .section {{ cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }}
+        .section:hover {{ transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,217,255,0.2); }}
+
         .header {{
             text-align: center;
             padding: 30px;
@@ -455,8 +557,8 @@ def generate_html():
 
     # VPCs section
     html += """
-    <div class="section">
-        <h2><span class="icon">🌐</span> VPCs</h2>
+    <div class="section" onclick="showModal('vpc')">
+        <h2><span class="icon">🌐</span> VPCs <span style="font-size:0.5em;color:#888;margin-left:10px;">Click to learn more</span></h2>
         <div class="resource-grid">
 """
     if vpcs:
@@ -481,8 +583,8 @@ def generate_html():
 
     # Subnets section
     html += """
-    <div class="section">
-        <h2><span class="icon">📦</span> Subnets</h2>
+    <div class="section" onclick="showModal('subnet')">
+        <h2><span class="icon">📦</span> Subnets <span style="font-size:0.5em;color:#888;margin-left:10px;">Click to learn more</span></h2>
         <div class="resource-grid">
 """
     if subnets:
@@ -507,8 +609,8 @@ def generate_html():
 
     # EC2 Instances section
     html += """
-    <div class="section">
-        <h2><span class="icon">💻</span> EC2 Instances</h2>
+    <div class="section" onclick="showModal('ec2')">
+        <h2><span class="icon">💻</span> EC2 Instances <span style="font-size:0.5em;color:#888;margin-left:10px;">Click to learn more</span></h2>
         <div class="resource-grid">
 """
     if instances:
@@ -534,8 +636,8 @@ def generate_html():
 
     # Security Groups section
     html += """
-    <div class="section">
-        <h2><span class="icon">🔒</span> Security Groups</h2>
+    <div class="section" onclick="showModal('securitygroup')">
+        <h2><span class="icon">🔒</span> Security Groups <span style="font-size:0.5em;color:#888;margin-left:10px;">Click to learn more</span></h2>
         <div class="resource-grid">
 """
     if security_groups:
@@ -558,6 +660,238 @@ def generate_html():
     </div>
 
     <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+
+    <!-- Modal Container -->
+    <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const explanations = {
+            vpc: {
+                title: '🌐 Virtual Private Cloud (VPC)',
+                content: `
+                    <div class="modal-section">
+                        <h4>What is a VPC?</h4>
+                        <p>A VPC (Virtual Private Cloud) is your own private, isolated section of the AWS cloud. Think of it as your own private data center within AWS where you have complete control over the network.</p>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Key Concepts</h4>
+                        <ul>
+                            <li><strong>CIDR Block</strong> - The IP address range (e.g., <code>10.0.0.0/16</code> gives you 65,536 IPs)</li>
+                            <li><strong>Region-specific</strong> - A VPC exists in one AWS region but spans all AZs</li>
+                            <li><strong>Isolation</strong> - Resources in one VPC can't communicate with another by default</li>
+                            <li><strong>Default VPC</strong> - AWS creates one per region, but production uses custom VPCs</li>
+                        </ul>
+                    </div>
+                    <div class="modal-section">
+                        <h4>VPC Components</h4>
+                        <div class="modal-diagram">VPC (10.0.0.0/16)
+├── Subnets (smaller IP ranges)
+├── Route Tables (traffic rules)
+├── Internet Gateway (internet access)
+├── NAT Gateway (private subnet internet)
+├── Security Groups (instance firewalls)
+└── Network ACLs (subnet firewalls)</div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Terraform Example</h4>
+                        <div class="modal-terraform">resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "my-vpc"
+  }
+}</div>
+                    </div>
+                    <div class="modal-example">
+                        <strong>Real-world analogy:</strong> A VPC is like renting a floor in an office building. You get your own space, control who enters (security groups), and set up your own rooms (subnets), but you're still in AWS's building (region).
+                    </div>
+                `
+            },
+            subnet: {
+                title: '📦 Subnets',
+                content: `
+                    <div class="modal-section">
+                        <h4>What is a Subnet?</h4>
+                        <p>A subnet is a segment of your VPC's IP range where you place AWS resources. Subnets live in a single Availability Zone and can be either public (internet-accessible) or private (internal only).</p>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Public vs Private Subnets</h4>
+                        <div class="modal-diagram">PUBLIC SUBNET                    PRIVATE SUBNET
+├── Has route to IGW             ├── No direct internet route
+├── Resources get public IPs     ├── Uses NAT for outbound
+├── Web servers, load balancers  ├── Databases, app servers
+└── Direct internet access       └── More secure</div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>CIDR Subnetting</h4>
+                        <ul>
+                            <li><code>10.0.0.0/16</code> - VPC with 65,536 IPs</li>
+                            <li><code>10.0.1.0/24</code> - Subnet with 256 IPs (251 usable)</li>
+                            <li><code>10.0.2.0/24</code> - Another subnet, same VPC</li>
+                            <li>AWS reserves 5 IPs per subnet (first 4 + last 1)</li>
+                        </ul>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Terraform Example</h4>
+                        <div class="modal-terraform">resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true  # Makes it public
+
+  tags = {
+    Name = "public-subnet"
+  }
+}</div>
+                    </div>
+                    <div class="modal-example">
+                        <strong>Real-world analogy:</strong> Subnets are like rooms in your office floor (VPC). The reception area (public subnet) is where visitors enter, while the server room (private subnet) is locked away from public access.
+                    </div>
+                `
+            },
+            ec2: {
+                title: '💻 EC2 Instances',
+                content: `
+                    <div class="modal-section">
+                        <h4>What is EC2?</h4>
+                        <p>EC2 (Elastic Compute Cloud) provides virtual servers in the cloud. You can launch instances of various sizes, install software, and run applications - just like physical servers but on-demand.</p>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Instance Types</h4>
+                        <ul>
+                            <li><strong>t2.micro</strong> - Free tier, 1 vCPU, 1GB RAM (testing)</li>
+                            <li><strong>t3.medium</strong> - 2 vCPU, 4GB RAM (small apps)</li>
+                            <li><strong>m5.large</strong> - 2 vCPU, 8GB RAM (general purpose)</li>
+                            <li><strong>c5.xlarge</strong> - 4 vCPU, 8GB RAM (compute-intensive)</li>
+                            <li><strong>r5.large</strong> - 2 vCPU, 16GB RAM (memory-intensive)</li>
+                        </ul>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Instance Lifecycle</h4>
+                        <div class="modal-diagram">pending → running → stopping → stopped
+                    ↓
+              shutting-down → terminated
+
+States:
+• running    = You're paying, it's working
+• stopped    = No compute charges, EBS still costs
+• terminated = Gone forever (can't recover)</div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Terraform Example</h4>
+                        <div class="modal-terraform">resource "aws_instance" "web" {
+  ami                    = "ami-0c55b159cbfafe1f0"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.web.id]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    yum install -y httpd
+    systemctl start httpd
+  EOF
+
+  tags = {
+    Name = "web-server"
+  }
+}</div>
+                    </div>
+                    <div class="modal-example">
+                        <strong>Real-world analogy:</strong> EC2 is like renting computers by the hour. Need a powerful machine for a few hours? Rent it. Need 100 servers for Black Friday? Spin them up, then shut them down when traffic drops.
+                    </div>
+                `
+            },
+            securitygroup: {
+                title: '🔒 Security Groups',
+                content: `
+                    <div class="modal-section">
+                        <h4>What is a Security Group?</h4>
+                        <p>A Security Group is a virtual firewall that controls inbound and outbound traffic for your AWS resources. It's stateful - if you allow inbound traffic, the response is automatically allowed out.</p>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Key Rules</h4>
+                        <ul>
+                            <li><strong>Default DENY</strong> - All inbound traffic blocked by default</li>
+                            <li><strong>Default ALLOW</strong> - All outbound traffic allowed by default</li>
+                            <li><strong>Stateful</strong> - Return traffic is automatically allowed</li>
+                            <li><strong>No DENY rules</strong> - You can only ALLOW; use NACLs for denies</li>
+                        </ul>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Common Port Rules</h4>
+                        <div class="modal-diagram">Port 22   (SSH)   - Remote server access
+Port 80   (HTTP)  - Web traffic
+Port 443  (HTTPS) - Secure web traffic
+Port 3306 (MySQL) - Database
+Port 5432 (PostgreSQL) - Database
+Port 3389 (RDP)   - Windows remote desktop
+
+Example rules:
+• Allow SSH from your IP only: 22 from 1.2.3.4/32
+• Allow HTTP from anywhere: 80 from 0.0.0.0/0
+• Allow MySQL from app tier: 3306 from sg-app</div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Terraform Example</h4>
+                        <div class="modal-terraform">resource "aws_security_group" "web" {
+  name        = "web-sg"
+  description = "Allow web traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["YOUR_IP/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}</div>
+                    </div>
+                    <div class="modal-example">
+                        <strong>Real-world analogy:</strong> Security Groups are like bouncers at a club. They check the guest list (rules) and only let in people who match the criteria (allowed ports/IPs). If you're already inside, you can leave freely (stateful).
+                    </div>
+                `
+            }
+        };
+
+        function showModal(type) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            const data = explanations[type];
+            if (data) {
+                body.innerHTML = `<div class="modal-title">${data.title}</div>${data.content}`;
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
 </body>
 </html>
 """
