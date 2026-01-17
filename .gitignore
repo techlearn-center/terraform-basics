@@ -21,3 +21,10 @@ Thumbs.db
 # LocalStack
 localstack-data/
 provider_override.tf
+
+# Python
+__pycache__/
+*.pyc
+
+# Windows
+nul
